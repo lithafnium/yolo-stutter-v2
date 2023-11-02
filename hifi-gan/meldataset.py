@@ -54,7 +54,7 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
 
     global mel_basis, hann_window
     if fmax not in mel_basis:
-        mel = librosa_mel_fn(sampling_rate, n_fft, num_mels, fmin, fmax)
+        mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis[str(fmax)+'_'+str(y.device)] = torch.from_numpy(mel).float().to(y.device)
         hann_window[str(y.device)] = torch.hann_window(win_size).to(y.device)
 
@@ -62,10 +62,11 @@ def mel_spectrogram(y, n_fft, num_mels, sampling_rate, hop_size, win_size, fmin,
     y = y.squeeze(1)
 
     spec = torch.stft(y, n_fft, hop_length=hop_size, win_length=win_size, window=hann_window[str(y.device)],
-                      center=center, pad_mode='reflect', normalized=False, onesided=True)
+                      center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=True)
 
     spec = torch.sqrt(spec.pow(2).sum(-1)+(1e-9))
-
+    print(spec.shape)
+    print(mel_basis[str(fmax)+'_'+str(y.device)].shape)
     spec = torch.matmul(mel_basis[str(fmax)+'_'+str(y.device)], spec)
     spec = spectral_normalize_torch(spec)
 
@@ -108,7 +109,7 @@ class MelDataset(torch.utils.data.Dataset):
         self.fine_tuning = fine_tuning
         self.base_mels_path = base_mels_path
 
-    def __getitem__(self, index):
+    def getitem(self, index):
         filename = self.audio_files[index]
         if self._cache_ref_count == 0:
             audio, sampling_rate = load_wav(filename)
@@ -163,6 +164,12 @@ class MelDataset(torch.utils.data.Dataset):
                                    center=False)
 
         return (mel.squeeze(), audio.squeeze(0), filename, mel_loss.squeeze())
+    def __getitem__(self, index):
+        if index + 1 > len(self.audio_files):
+            return None
+        
+        return self.getitem(index)
+
 
     def __len__(self):
         return len(self.audio_files)
