@@ -71,22 +71,16 @@ def insert_noise(audio, insert_position_sec, silence_duration_sec, noise_std_dev
     noise = np.random.normal(0, noise_std_dev, len(silence.get_array_of_samples())).astype(np.int16)
     noise_segment = AudioSegment(noise.tobytes(), frame_rate=silence.frame_rate, sample_width=silence.sample_width, channels=1)
 
-    print(insert_position_sec)
     noisy_silence = silence.overlay(noise_segment)
 
     part1 = audio[:int(insert_position_sec )]
     part2 = audio[int(insert_position_sec ):]
 
-    print(len(part1), len(part2))
     noisy_silence = np.array(noisy_silence.get_array_of_samples())
-    print(part1.shape, part2.shape, noisy_silence.shape)
 
-    no_noise = np.concatenate([part1, part2], axis=0)
     output = np.concatenate([part1, noisy_silence, part2 ], axis=0)
 
-    print(len(output))
     sf.write(output_path, output, samplerate=22050, subtype='PCM_24')
-    sf.write("no_silence.wav", no_noise, samplerate=22050, subtype='PCM_24')
 
 def get_phonemes(text):
     phonemes = phonemize(text, language='en-us', backend='espeak', strip=True, preserve_punctuation=True, with_stress=True)
