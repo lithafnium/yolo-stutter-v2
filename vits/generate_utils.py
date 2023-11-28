@@ -1,7 +1,7 @@
 import torch
 import json
 import commons
-import soundfile as sf
+import torchaudio
 
 import numpy as np
 
@@ -54,7 +54,8 @@ def get_time_transcription(durations, stn_tst):
     
     return ret
 
-def get_indexes(words): 
+def get_first_indexes(words): 
+    # get index of the first word
     first_phonemes = [w[0] for w in words]
     symbol_indexes = [symbols.index(p) for p in first_phonemes]
 
@@ -66,7 +67,7 @@ def get_indexes(words):
     
     return text_indexes, symbol_indexes
 
-def insert_noise(audio, insert_position_sec, silence_duration_sec, noise_std_dev, output_path="test.wav"):
+def insert_noise(audio, insert_position_sec, silence_duration_sec, noise_std_dev):
     silence = AudioSegment.silent(duration=silence_duration_sec * 1000)
     noise = np.random.normal(0, noise_std_dev, len(silence.get_array_of_samples())).astype(np.int16)
     noise_segment = AudioSegment(noise.tobytes(), frame_rate=silence.frame_rate, sample_width=silence.sample_width, channels=1)
@@ -80,7 +81,11 @@ def insert_noise(audio, insert_position_sec, silence_duration_sec, noise_std_dev
 
     output = np.concatenate([part1, noisy_silence, part2 ], axis=0)
 
-    sf.write(output_path, output, samplerate=22050, subtype='PCM_24')
+    return output
+
+def write_audio_from_np(audio, out_file):
+    torchaudio.save(out_file, torch.Tensor(audio).unsqueeze(0), sample_rate=22050)
+
 
 def get_phonemes(text):
     phonemes = phonemize(text, language='en-us', backend='espeak', strip=True, preserve_punctuation=True, with_stress=True)
