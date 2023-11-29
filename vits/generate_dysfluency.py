@@ -77,7 +77,21 @@ def generate(text, net_g, hps, generate_type=StutterType.PHONEMISS):
 
 
 if __name__ == "__main__": 
+    parser = argparse.ArgumentParser(
+        prog="GenerateDysfluency",
+        description="Automatically generate dysfluencies from a given text"
+    )
 
+    parser.add_argument("--texts", type=str, help="Input file of texts to put in and generate")
+    parser.add_argument("--text", type=str, help="Input text to generate dysfluency")
+    parser.add_argument("--output_dir", type=str, help="Output directory to put generated sound files", required=True, default="./generated")
+
+    parser.add_argument("--model_config", type=str, help="path to VITS model config", default="./configs/vctk_base.json")
+    parser.add_argument("--model", type=str, help="path to model weights", default="./saved_models/pretrained_vctk.pth")
+    args = parser.parse_args()
+
+    if args.text is None and args.texts is None:
+        raise Exception("One of --texts or --text needs to be passed in") 
     hps = utils.get_hparams_from_file("./configs/vctk_base.json")
 
     net_g = SynthesizerTrn(
