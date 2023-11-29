@@ -7,10 +7,12 @@ from enum import Enum
 from generate_utils import *
 from models import SynthesizerTrn
 import utils
+from process_miss import generate_missing
 
 class StutterType(Enum):
     PHONEBLOCK=0
     PHONEREP=1
+    PHONEMISS=2
 
 def generate_phone_rep(text, net_g, hps, out_file="phonerep.wav"):
     phonemes = get_phonemes(text)
@@ -57,11 +59,21 @@ def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wa
     audio = insert_noise(audio, chosen_timestamp["start"] * sample_rate, silence_duration_sec=4, noise_std_dev=0.01)
     write_audio_from_np(audio, out_file)
 
-def generate(text, net_g, hps, generate_type=StutterType.PHONEREP):
+def generate_phone_miss(text, net_g, hps, out_file="missing.wav"):
+    phonemes_miss = generate_missing(text)
+    print(phonemes_miss)
+    stn_tst = get_text(phonemes_miss, hps)
+    audio, _ = infer_audio(stn_tst, net_g)
+    write_audio_from_np(audio, out_file)
+
+
+def generate(text, net_g, hps, generate_type=StutterType.PHONEMISS):
     if generate_type == StutterType.PHONEBLOCK:
         generate_phone_block(text, net_g, hps, out_file=f"block.wav")
     if generate_type == StutterType.PHONEREP:
         generate_phone_rep(text, net_g, hps)
+    if generate_type == StutterType.PHONEMISS:
+        generate_phone_miss(text, net_g, hps)
 
 
 if __name__ == "__main__": 
