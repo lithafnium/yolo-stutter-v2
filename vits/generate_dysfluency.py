@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     if args.text is None and args.texts is None:
         raise Exception("One of --texts or --text needs to be passed in") 
-    hps = utils.get_hparams_from_file("./configs/vctk_base.json")
+    hps = utils.get_hparams_from_file(args.model_config)
 
     net_g = SynthesizerTrn(
         len(symbols),
@@ -100,6 +100,6 @@ if __name__ == "__main__":
         hps.train.segment_size // hps.data.hop_length,
         **hps.model)
     _ = net_g.eval()
-    _ = utils.load_checkpoint("./saved_models/pretrained_vctk.pth", net_g, None)
+    _ = utils.load_checkpoint(args.model, net_g, None)
     
     generate("Please call Stella", net_g, hps)
