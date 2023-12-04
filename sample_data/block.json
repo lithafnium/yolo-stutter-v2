@@ -1,0 +1,128 @@
+[
+    {
+        "start": 0.012,
+        "end": 3.346,
+        "phonemes": [
+            {
+                "phoneme": "p",
+                "start": 0.012,
+                "end": 0.023,
+                "type": null
+            },
+            {
+                "phoneme": "l",
+                "start": 0.104,
+                "end": 0.116,
+                "type": null
+            },
+            {
+                "phoneme": "\u02c8",
+                "start": 0.151,
+                "end": 0.209,
+                "type": null
+            },
+            {
+                "phoneme": "i",
+                "start": 0.244,
+                "end": 0.348,
+                "type": null
+            },
+            {
+                "phoneme": "\u02d0",
+                "start": 0.36,
+                "end": 0.395,
+                "type": null
+            },
+            {
+                "phoneme": "z",
+                "start": 0.464,
+                "end": 0.522,
+                "type": null
+            },
+            {
+                "phoneme": " ",
+                "start": 0.534,
+                "end": 0.546,
+                "type": null
+            },
+            {
+                "phoneme": "",
+                "start": 0.58,
+                "end": 2.08,
+                "type": "block"
+            },
+            {
+                "phoneme": "k",
+                "start": 2.08,
+                "end": 2.104,
+                "type": null
+            },
+            {
+                "phoneme": "\u02c8",
+                "start": 2.115,
+                "end": 2.173,
+                "type": null
+            },
+            {
+                "phoneme": "\u0254",
+                "start": 2.185,
+                "end": 2.197,
+                "type": null
+            },
+            {
+                "phoneme": "\u02d0",
+                "start": 2.255,
+                "end": 2.336,
+                "type": null
+            },
+            {
+                "phoneme": "l",
+                "start": 2.348,
+                "end": 2.382,
+                "type": null
+            },
+            {
+                "phoneme": " ",
+                "start": 2.394,
+                "end": 2.475,
+                "type": null
+            },
+            {
+                "phoneme": "s",
+                "start": 2.557,
+                "end": 2.591,
+                "type": null
+            },
+            {
+                "phoneme": "t",
+                "start": 2.649,
+                "end": 2.661,
+                "type": null
+            },
+            {
+                "phoneme": "\u02c8",
+                "start": 2.835,
+                "end": 2.847,
+                "type": null
+            },
+            {
+                "phoneme": "\u025b",
+                "start": 2.905,
+                "end": 2.916,
+                "type": null
+            },
+            {
+                "phoneme": "l",
+                "start": 2.928,
+                "end": 3.033,
+                "type": null
+            },
+            {
+                "phoneme": "\u0259",
+                "start": 3.137,
+                "end": 3.346,
+                "type": null
+            }
+        ]
+    }
+]
