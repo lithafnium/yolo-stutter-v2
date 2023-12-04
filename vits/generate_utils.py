@@ -48,8 +48,9 @@ def get_time_transcription(durations, stn_tst):
             print(f"{phoneme}: {start:.4f}s to {end:.4f}s")
             ret.append({
                 "phoneme": phoneme,
-                "start": round(start.item(), 3),
-                "end": round(end.item(), 3)
+                "start": round(start.item(), 3),  #
+                "end": round(end.item(), 3),   #
+                "type": None
             })
     
     return ret
