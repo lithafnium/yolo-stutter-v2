@@ -123,7 +123,7 @@ def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wa
     audio = insert_noise(audio, chosen_timestamp["start"]*sample_rate, silence_duration_sec=silence_duration, noise_std_dev=0.01)
     
     block_phoneme = {
-        "phoneme": "",
+        "phoneme": None,
         "start": chosen_timestamp["start"],
         "end": chosen_timestamp["start"] + silence_duration/2,
         "type": "block"
