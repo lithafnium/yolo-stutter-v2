@@ -1,6 +1,8 @@
 import torch
 import random
 import re
+import json
+import csv
 
 from text import symbols
 from enum import Enum
@@ -8,18 +10,20 @@ from generate_utils import *
 from models import SynthesizerTrn
 import utils
 from process_miss import generate_missing
+import pysle
 
 class StutterType(Enum):
     PHONEBLOCK=0
     PHONEREP=1
     PHONEMISS=2
 
-def generate_phone_rep(text, net_g, hps, out_file="phonerep.wav"):
+
+def generate_phone_rep(text, net_g, hps, out_file, sid):
     phonemes = get_phonemes(text)
     words =  phonemes.split(" ")
 
     text_indexes, symbol_indexes = get_first_indexes(words)
-    print(text_indexes)
+    # print(text_indexes)
     chosen = random.sample(range(len(text_indexes)), k=1)[0]
     phone = symbols[symbol_indexes[chosen]]
     text_index = text_indexes[chosen]
@@ -28,10 +32,10 @@ def generate_phone_rep(text, net_g, hps, out_file="phonerep.wav"):
     repeated = f"{(phone + pause) * random.randint(2, 4)}"  #1-4 repetitions in the yolo stutter paper
 
     generated = phonemes[:text_index] + repeated + phonemes[text_index + 1:]    
-    print(generated)
+    # print(generated)
     stn_tst = get_text(generated, hps)
 
-    audio, durations = infer_audio(stn_tst, net_g)
+    audio, durations = infer_audio(stn_tst, net_g, sid)
     unit_duration = 256 / 22050
 
     durations = durations * unit_duration
@@ -79,8 +83,9 @@ def generate_phone_rep(text, net_g, hps, out_file="phonerep.wav"):
                 new_phonemes.append(phoneme)
             i += 1
         entry['phonemes'] = new_phonemes
-
-    with open('rep.json', 'w') as f:
+    
+    json_path = out_file.replace("disfluent_audio", "disfluent_labels")
+    with open(json_path.replace(".wav", ".json"), 'w') as f:
         json.dump(label, f, indent=4)
 
     write_audio_from_np(audio, out_file)
@@ -88,11 +93,11 @@ def generate_phone_rep(text, net_g, hps, out_file="phonerep.wav"):
 
 
 
-def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wav"):
+def generate_phone_block(text, net_g, hps, out_file, sid, sample_rate=22050):
     phonemes = get_phonemes(text)
     stn_tst = get_text(phonemes, hps)
 
-    audio, durations = infer_audio(stn_tst, net_g)
+    audio, durations = infer_audio(stn_tst, net_g, sid)
 
     unit_duration = 256 / sample_rate
 
@@ -109,15 +114,15 @@ def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wa
     }]
 
     words = phonemes.split(" ")
-    print(words)
+    # print(words)
     text_indexes, _ = get_first_indexes(words)
-    print(text_indexes)
+    # print(text_indexes)
 
     chosen = random.sample(text_indexes, k=1)[0]  # index
-    print(chosen)
+    # print(chosen)
     chosen_timestamp = timestamps[chosen]  ##
-    print(chosen_timestamp)
-    silence_duration = random.randint(1,3) ## ->
+    # print(chosen_timestamp)
+    silence_duration = random.randint(1,4) ## ->
     
     audio = np.array(audio)
     audio = insert_noise(audio, chosen_timestamp["start"]*sample_rate, silence_duration_sec=silence_duration, noise_std_dev=0.01)
@@ -142,8 +147,9 @@ def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wa
         "end": round(timestamps[-1]["end"], 3),
         "phonemes": timestamps
     }]
-
-    with open('block.json', 'w') as f:
+    
+    json_path = out_file.replace("disfluent_audio", "disfluent_labels")
+    with open(json_path.replace(".wav", ".json"), 'w') as f:
         json.dump(label, f, indent=4)
 
     write_audio_from_np(audio, out_file)
@@ -151,13 +157,16 @@ def generate_phone_block(text, net_g, hps, sample_rate=22050, out_file="block.wa
 
 
 
-def generate_phone_miss(text, net_g, hps, out_file="missing.wav"):
+def generate_phone_miss(text, net_g, hps, out_file, sid):
+    text = text.replace(", ", " ")
+    text = text.replace("?", "")
+    text = text.replace("-", " ")
     original_phonems = get_phonemes(text)
-    print(original_phonems)
+    # print(original_phonems)
     phonemes_miss = generate_missing(text)
-    print(phonemes_miss)
+    # print(phonemes_miss)
     stn_tst = get_text(phonemes_miss, hps)
-    audio, durations = infer_audio(stn_tst, net_g)
+    audio, durations = infer_audio(stn_tst, net_g, sid)
     unit_duration = 256 / 22050
 
     durations = durations * unit_duration
@@ -173,8 +182,9 @@ def generate_phone_miss(text, net_g, hps, out_file="missing.wav"):
         else:
             j += 1
     missing_phoneme = missing_phoneme_index[0]
-    print(missing_phoneme)
-    print(original_phonems[missing_phoneme])
+    
+    # print(missing_phoneme)
+    # print(original_phonems[missing_phoneme])
 
     for i, phoneme in enumerate(original_phonems):
         if i == missing_phoneme:
@@ -193,39 +203,34 @@ def generate_phone_miss(text, net_g, hps, out_file="missing.wav"):
         "end": round(timestamps[-1]["end"], 3),
         "phonemes": timestamps
     }]
-
-    with open('missing.json', 'w') as f:
+    
+    json_path = out_file.replace("disfluent_audio", "disfluent_labels")
+    with open(json_path.replace(".wav", ".json"), 'w') as f:
         json.dump(label, f, indent=4)
 
     write_audio_from_np(audio, out_file)
 
 
-def generate(text, net_g, hps, generate_type=StutterType.PHONEMISS):
-    if generate_type == StutterType.PHONEBLOCK:
-        generate_phone_block(text, net_g, hps, out_file=f"block.wav")
-    if generate_type == StutterType.PHONEREP:
-        generate_phone_rep(text, net_g, hps)
-    if generate_type == StutterType.PHONEMISS:
-        generate_phone_miss(text, net_g, hps)
+
+def generate(text, net_g, hps, out_path, sid, generate_type=StutterType.PHONEREP):
+    generate_phone_block(text, net_g, hps, out_path.replace(".wav", "_block.wav"), sid)
+    generate_phone_rep(text, net_g, hps, out_path.replace(".wav", "_rep.wav"), sid)
+    generate_phone_miss(text, net_g, hps, out_path.replace(".wav", "_missing.wav"), sid)
+
+    # if generate_type == StutterType.PHONEBLOCK:
+    #     out_file = out_path.replace(".wav", "_block.wav")
+    #     generate_phone_block(text, net_g, hps, out_file, sid)
+    # if generate_type == StutterType.PHONEREP:
+    #     out_file = out_path.replace(".wav", "_rep.wav")
+    #     generate_phone_rep(text, net_g, hps, out_file, sid)
+    # if generate_type == StutterType.PHONEMISS:
+    #     out_file = out_path.replace(".wav", "_missing.wav")
+    #     generate_phone_miss(text, net_g, hps, out_file, sid)
 
 
 if __name__ == "__main__": 
-    parser = argparse.ArgumentParser(
-        prog="GenerateDysfluency",
-        description="Automatically generate dysfluencies from a given text"
-    )
 
-    parser.add_argument("--texts", type=str, help="Input file of texts to put in and generate")
-    parser.add_argument("--text", type=str, help="Input text to generate dysfluency")
-    parser.add_argument("--output_dir", type=str, help="Output directory to put generated sound files", required=True, default="./generated")
-
-    parser.add_argument("--model_config", type=str, help="path to VITS model config", default="./configs/vctk_base.json")
-    parser.add_argument("--model", type=str, help="path to model weights", default="./saved_models/pretrained_vctk.pth")
-    args = parser.parse_args()
-
-    if args.text is None and args.texts is None:
-        raise Exception("One of --texts or --text needs to be passed in") 
-    hps = utils.get_hparams_from_file(args.model_config)
+    hps = utils.get_hparams_from_file("./configs/vctk_base.json")
 
     net_g = SynthesizerTrn(
         len(symbols),
@@ -233,6 +238,32 @@ if __name__ == "__main__":
         hps.train.segment_size // hps.data.hop_length,
         **hps.model)
     _ = net_g.eval()
-    _ = utils.load_checkpoint(args.model, net_g, None)
+    _ = utils.load_checkpoint("./path/to/pretrained_vctk.pth", net_g, None)
+
+    sid = torch.LongTensor([225])  # set speaker id
+
+    csv_file = "VCTK-tts.csv"
+    with open(csv_file, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            filename, text = row
+            file_num = filename.split('_')[1].split('.')[0]
+            
+            filename = filename.replace("239", str(sid.item()))
+            out_path = f"../disfluent_audio/{filename.replace('.txt', '.wav')}"
+
+            text_file_path = f"../gt_text/{filename.replace('.wav', '.txt')}"
+            with open(text_file_path, 'w') as text_file:
+                text_file.write(text)
+                
+            try:
+                generate(text, net_g, hps, out_path=out_path, sid=sid)
+            except (IndexError, pysle.utilities.errors.WordNotInIsleError):
+                print("error:{}".format(out_path))
+                continue
+
+            print("finish:{}".format(out_path))
     
-    generate("Please call Stella", net_g, hps)
+    # generate("The head teacher was a highly effective leader and manager.", net_g, hps, out_path="../disfluent_audio/p225_052.wav", sid=sid)
+
+
