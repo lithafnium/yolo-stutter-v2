@@ -10,12 +10,12 @@ from text.new import use_phoneme
 from phonemizer import phonemize
 from pydub import AudioSegment
 
-def infer_audio(stn_tst, net_g):
+def infer_audio(stn_tst, net_g, sid):
     with torch.no_grad():
         x_tst = stn_tst.unsqueeze(0)
         x_tst_lengths = torch.LongTensor([stn_tst.size(0)])
-        sid = torch.LongTensor([51]) # set speaker-id
-        outputs = net_g.infer(x_tst, x_tst_lengths, noise_scale=.667, sid=sid,noise_scale_w=0.8, length_scale=1.6)
+        # sid = torch.LongTensor([239]) # set speaker-id
+        outputs = net_g.infer(x_tst, x_tst_lengths, noise_scale=.667, sid=sid,noise_scale_w=0.8, length_scale=1.3)
         audio = outputs[0][0,0].data.cpu().float().numpy()
         durations = outputs[-1]
     
