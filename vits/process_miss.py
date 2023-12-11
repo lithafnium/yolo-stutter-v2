@@ -42,6 +42,11 @@ def generate_phone_missing_syllable_deletion(text):
     poly = False
     shuffled_indices = random.sample(range(len(words)), k=len(words))
     chosen_index = 0
+
+     # set default
+    generatedSentence  = phonemize(text, language='en-us', backend='espeak', 
+                                      strip=True, preserve_punctuation=True, with_stress=True)
+    
     for index in shuffled_indices:
         chosen = words[index]
         chosen_index = index
